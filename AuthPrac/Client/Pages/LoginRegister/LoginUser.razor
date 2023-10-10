@@ -1,0 +1,93 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.WebUtilities;
+@inject IAuthService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>Login</PageTitle>
+
+<h3>LoginUser</h3>
+
+<EditForm Model="@userT" OnValidSubmit="HandleLogin" style="margin-left: 5%; padding: 6%;margin-top: -45px;">
+    <DataAnnotationsValidator />
+    <MudIcon Icon="@Icons.Material.Filled.Person" Style="position: relative;color: #FFFFFF;top: 55px;left: -30px; " /><MudTextField @bind-Value="userT.Username" Label=" User Name" Variant="Variant.Text" Margin="Margin.Dense"></MudTextField>
+    <MudIcon Icon="@Icons.Material.Filled.Lock" Style="position: relative;color: #FFFFFF;top: 55px;left: -30px; " /><MudTextField @bind-Value="userT.Password" Label=" Password" Variant="Variant.Text" Margin="Margin.Dense" InputType="@PasswordInput" Adornment="Adornment.End" AdornmentIcon="@PasswordInputIcon" OnAdornmentClick="ButtonTestclick" AdornmentAriaLabel="Show Password" />
+    <br /><br />
+    <MudBlazor.MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Info" Class="ml-auto" Style="padding: 15px;border-radius: 20px;position: relative;margin-bottom: 2%;padding-left: 47%;padding-right: 50%;left: -6%;">Login</MudBlazor.MudButton>
+    <br />
+</EditForm>
+
+@code {
+#nullable disable
+    private MudTheme Theme = new MudTheme();
+    private UserMasterT userT = new UserMasterT();
+
+    private string errorMessage = string.Empty;
+
+    private string returnUrl = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var url))
+            {
+                returnUrl = url;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message.ToString());
+        }
+
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            var result = await AuthService.Login(userT);
+            if (result.Success)
+            {
+                errorMessage = string.Empty;
+
+                await LocalStorage.SetItemAsync("token", result.Data);
+                await AuthenticationStateProvider.GetAuthenticationStateAsync();
+
+                NavigationManager.NavigateTo("/index");
+              
+            }
+            else
+            {
+                errorMessage = result.Message;
+               
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message.ToString());
+        }
+    }
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ButtonTestclick()
+    {
+        @if (isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+}

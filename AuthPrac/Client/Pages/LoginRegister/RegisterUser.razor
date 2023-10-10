@@ -1,0 +1,54 @@
+﻿@page "/Register"
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILocalStorageService LocalStorage
+@inject IAuthService AuthService
+
+
+<h3>Register</h3>
+
+<EditForm Model="reg" OnSubmit="HandleRegistration">
+    <MudTextField @bind-Value="reg.Username" Label="User Name" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="User name is required!"></MudTextField>
+    <MudTextField @bind-Value="reg.Email" Label="Email Address" Variant="Variant.Outlined" Margin="Margin.Dense" Required="true" RequiredError="Email is required!" Validation="@(new EmailAddressAttribute() {ErrorMessage = "The email address is invalid"})"></MudTextField>
+    <MudTextField @bind-Value="reg.Password" InputType="InputType.Password" Label="Password" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.Password)"></MudTextField>
+    <MudTextField @bind-Value="reg.ConfirmPassword" InputType="InputType.Password" Label="Confirm Password" Variant="Variant.Outlined" Margin="Margin.Dense" For="@(() => model.ConfirmPassword)"></MudTextField>
+    <MudBlazor.MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Secondary" Style="text-transform: none;">Register</MudBlazor.MudButton>
+    <div class="@messageCssClass">
+        <span>@message</span>
+    </div>
+</EditForm>
+
+@code {
+    RegistrationDto reg = new RegistrationDto();
+    RegisterAccountForm model = new RegisterAccountForm();
+    bool success;
+    string message = string.Empty;
+    string messageCssClass = string.Empty;
+
+    async Task HandleRegistration()
+    {
+        var result = await AuthService.Register(reg);
+        message = result.Message;
+        if (result.Success)
+            messageCssClass = "text-success";
+        else
+            messageCssClass = "text-danger";
+    }
+    public class RegisterAccountForm
+    {
+        [Required]
+        [StringLength(30, ErrorMessage = "Password must be at least 6 characters long.", MinimumLength = 6)]
+        public string Password { get; set; } = string.Empty;
+
+        [Required]
+        [Compare(nameof(Password))]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+}
